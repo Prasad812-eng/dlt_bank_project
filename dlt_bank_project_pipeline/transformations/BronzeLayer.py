@@ -1,21 +1,22 @@
 ######## Data Cleaning ########
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 
-@dlt.table(
-    name="bronze_customer_ingestion_cleaned",
+txn_types={"Credit":"Credit","Crediit":"Credit","Debit":"Debit","Debiit":"Debit"}
+@dp.table(
+    name="bronze_customer_cleaned",
     comment="This table contains the cleaned data for the customers ingested"
 )
-@dlt.expect_or_fail("valid_customer_id","customer_id IS NOT NULL")
-@dlt.expect_or_fail("valid_customer_name","name IS NOT NULL")
-@dlt.expect_or_drop("valid_dob","dob IS NOT NULL")
-@dlt.expect_or_drop("valid_city","city IS NOT NULL")
-@dlt.expect_or_drop("valid_join_date","join_date IS NOT NULL")
-@dlt.expect_or_drop("valid_email","email IS NOT NULL")
+@dp.expect_or_fail("valid_customer_id","customer_id IS NOT NULL")
+@dp.expect_or_fail("valid_customer_name","name IS NOT NULL")
+@dp.expect_or_drop("valid_dob","dob IS NOT NULL")
+@dp.expect_or_drop("valid_city","city IS NOT NULL")
+@dp.expect_or_drop("valid_join_date","join_date IS NOT NULL")
+@dp.expect_or_drop("valid_email","email IS NOT NULL")
 
 def customer_ingestion_cleaned():
-    df=dlt.read_stream("landing_customers_incremental")
+    df=dp.read_stream("landing_customers_incremental")
     df=(
         df.withColumn('name',upper(df.name)).
            withColumn('email',upper(df.email)).
@@ -35,3 +36,20 @@ def customer_ingestion_cleaned():
 
         )
     return df
+@dp.table(
+    name="bronze_accounts_cleaned",
+    comment="This table contains the cleaned data from the accounts transactions"
+)
+@dp.expect_or_fail("valid_account_id","account_id IS NOT NULL")
+@dp.expect_or_fail("valid_customer_id","customer_id IS NOT NULL")
+@dp.expect_or_fail("valid_txn_id","balance IS NOT NULL")
+@dp.expect_or_drop("valid_account_type","account_type IS NOT NULL")
+@dp.expect_or_drop("valid_txn_date","txn_date IS NOT NULL")
+@dp.expect_or_drop("valid_txn_channel","txn_channel IS NOT NULL")
+def accounts_cleaned_incremental():
+    df=dp.read_stream("landing_accounts_incremental")
+    df=(
+        df.withColumn('txn_type',when(df.txn_type=='Creditt','Credit').when(df.txn_type=='Debitt','Debit').otherwise(df.txn_type))
+    )
+    return df
+

@@ -1,5 +1,5 @@
 ######## Customer 2023 data ingestion ########
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 
@@ -33,7 +33,7 @@ accounts_schema=StructType([
 
 transactions_schema=StructType([
 ])
-@dlt.table(
+@dp.table(
     name="landing_customers_incremental",
     comment="landing customers data"
 )
@@ -47,8 +47,8 @@ def customers_incremental():
         load("/Volumes/dlt_bank_project/dlt_bank_schema/dlt_bank_volume/customers/")
     )
 
-@dlt.table(
-    name="landing_accounts_transactions",
+@dp.table(
+    name="landing_accounts_incremental",
     comment="landing accounts transaction data"
 )
 def accounts_incremental():
